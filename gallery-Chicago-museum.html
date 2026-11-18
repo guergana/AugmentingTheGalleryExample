@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Art Institute of Chicago Gallery</title>
+  <meta name="referrer" content="no-referrer">
+  <style>
+    /* Simple styling so the images are laid out in a grid */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .artwork {
+      width: 300px;
+    }
+    .artwork img {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Art Institute of Chicago Gallery</h1>
+
+  <!-- This empty box is where we will add the artworks -->
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    // STEP 1: Ask the museum's API for a list of artworks.
+    // "limit=6" means "give me 6 artworks".
+    // "fields=..." means "only send me these details" to keep the data small.
+    fetch("https://api.artic.edu/api/v1/artworks?limit=6&fields=id,title,artist_title,image_id")
+
+      // STEP 2: Convert the response from raw text into JavaScript data
+      .then(response => response.json())
+
+      // STEP 3: Use the data to build the gallery on the page
+      .then(data => {
+        // Find the empty gallery box in our HTML
+        const gallery = document.getElementById("gallery");
+
+        // The list of artworks is stored in data.data.
+        // forEach means "do the following for each artwork in the list".
+        data.data.forEach(artwork => {
+
+          // Skip any artwork that doesn't have a picture
+          if (!artwork.image_id) return;
+
+          // Build the web address of the picture using its image ID
+          const imageUrl = `https://www.artic.edu/iiif/2/${artwork.image_id}/full/843,/0/default.jpg`;
+
+          // Add a box to the gallery with the picture, title, and artist
+          gallery.innerHTML += `
+            <div class="artwork">
+              <img src="${imageUrl}" alt="${artwork.title}">
+              <h3>${artwork.title}</h3>
+              <p>${artwork.artist_title || "Unknown artist"}</p>
+            </div>
+          `;
+        });
+      })
+
+      // If anything goes wrong, show the error in the browser's console
+      .catch(error => console.log("Something went wrong:", error));
+  </script>
+
+</body>
+</html>

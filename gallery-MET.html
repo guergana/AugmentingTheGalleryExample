@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Metropolitan Museum Gallery</title>
+  <style>
+    /* Simple styling so the pictures sit in a row */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .artwork {
+      width: 300px;
+    }
+    .artwork img {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Metropolitan Museum of Art: Dogs</h1>
+
+  <!-- The artworks will be added inside this empty box -->
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    // This function does all the work.
+    // "async" lets us wait for each step to finish before the next one starts.
+    async function loadGallery() {
+      const gallery = document.getElementById("gallery");
+
+      // STEP 1: Search the Met's collection for "sunflowers".
+      // q=sunflowers    -> the search word
+      // hasImages=true  -> only return artworks that have a picture
+      // limit=6         -> return at most 6 results
+      const searchUrl = "https://collectionapi.metmuseum.org/public/collection/v1.1/search?q=dogs&hasImages=true&limit=6";
+
+      const searchResponse = await fetch(searchUrl);
+      const searchData = await searchResponse.json();
+
+      // The search returns a list of ID numbers, called objectIDs.
+      // If nothing matches, objectIDs may be missing, so we use [] as a fallback.
+      const objectIDs = searchData.objectIDs || [];
+
+      // STEP 2: For each ID, ask the API for the full details of that artwork.
+      for (const id of objectIDs) {
+        const detailResponse = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`);
+        const artwork = await detailResponse.json();
+
+        // Skip any artwork that doesn't have a small image
+        if (!artwork.primaryImageSmall) continue;
+
+        // STEP 3: Add a box to the page with the picture, title, and artist
+        gallery.innerHTML += `
+          <div class="artwork">
+            <img src="${artwork.primaryImageSmall}" alt="${artwork.title}">
+            <h3>${artwork.title}</h3>
+            <p>${artwork.artistDisplayName || "Unknown artist"}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Run the function, and show any error in the console (press F12 to see it)
+    loadGallery().catch(error => console.log("Something went wrong:", error));
+  </script>
+
+</body>
+</html>
