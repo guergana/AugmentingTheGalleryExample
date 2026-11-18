@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Git Cheatsheet</title>
+  <style>
+    /* Page setup for printing to PDF (A4 paper) */
+    @page { size: A4; margin: 14mm; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2937;
+      font-size: 16px;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    /* Title banner */
+    header {
+      background: linear-gradient(135deg, #f05032, #c2410c);
+      color: #fff;
+      padding: 20px 26px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    header h1 { margin: 0; font-size: 26px; }
+    header p  { margin: 4px 0 0; opacity: 0.9; }
+
+    /* The "what we did today" flow at the top */
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0 16px;
+    }
+    .flow span {
+      background: #fff7ed;
+      border: 2px solid #f97316;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: bold;
+      color: #9a3412;
+    }
+    .flow b { color: #f97316; font-size: 16px; }
+
+    /* Each section is a colored card */
+    section {
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      page-break-inside: avoid;
+    }
+    h2 { margin: 0 0 10px; font-size: 17px; }
+    .s1 { background: #eff6ff; border-left: 6px solid #2563eb; }
+    .s2 { background: #f0fdf4; border-left: 6px solid #16a34a; }
+    .s3 { background: #faf5ff; border-left: 6px solid #9333ea; }
+    .s4 { background: #fff7ed; border-left: 6px solid #f97316; }
+
+    /* Numbered steps */
+    .step { display: flex; gap: 10px; margin: 8px 0; align-items: flex-start; }
+    .num {
+      min-width: 24px; height: 24px; border-radius: 50%;
+      background: #1f2937; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 12px;
+    }
+
+    /* Command boxes */
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 18px;
+      white-space: pre-wrap;
+      margin: 4px 0;
+    }
+
+    .tip {
+      background: #fef9c3;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-top: 8px;
+    }
+
+    /* Two columns: terminal on the left, VS Code on the right */
+    .two { display: flex; gap: 14px; }
+    .two > div { flex: 1; }
+    .label {
+      font-weight: bold; text-transform: uppercase;
+      font-size: 11px; letter-spacing: 1px; color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    th { background: #1f2937; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Git Cheatsheet</h1>
+    <p>Save your work, send it to GitHub, and keep your copy up to date</p>
+  </header>
+
+  <!-- Today's workflow at a glance -->
+  <div class="flow">
+    <span>1. Setup</span> <b>→</b>
+    <span>2. New project</span> <b>→</b>
+    <span>3. Add</span> <b>→</b>
+    <span>4. Commit</span> <b>→</b>
+    <span>5. Push</span>
+  </div>
+
+  <!-- SECTION 1: One-time setup -->
+  <section class="s1">
+    <h2>Section 1: One-time setup (do this once per computer)</h2>
+
+    <div class="step"><div class="num">1</div>
+      <div>
+        <b>Check if Git is installed.</b> Open a terminal and type:
+        <pre>git --version</pre>
+        If you see a version number (like <code>git version 2.45.0</code>), you're done.<br>
+        If you get an error like "command not found", install Git:
+        <ul>
+          <li><b>Windows:</b> download it from <code>git-scm.com</code> and keep the default options.</li>
+          <li><b>Mac:</b> type <code>xcode-select --install</code> in the terminal and follow the prompts.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step"><div class="num">2</div>
+      <div>
+        <b>Set your name</b> (this appears on your saved work):
+        <pre>git config --global user.name "Your Name"</pre>
+      </div>
+    </div>
+
+    <div class="step"><div class="num">3</div>
+      <div>
+        <b>Set your email</b> (use the same email as your GitHub account):
+        <pre>git config --global user.email "you@example.com"</pre>
+      </div>
+    </div>
+
+    <div class="step"><div class="num">4</div>
+      <div>
+        <b>Check your settings:</b>
+        <pre>git config --list</pre>
+      </div>
+    </div>
+
+    <div class="tip">💡 <code>--global</code> means these settings apply to every project on your computer. You only need to do this once.</div>
+  </section>
+
+  <!-- SECTION 2: Every new project -->
+  <section class="s2">
+    <h2>Section 2: Every new project</h2>
+
+    <div class="step"><div class="num">1</div>
+      <div>
+        <b>Go into your project folder</b> (or create one):
+        <pre>mkdir my-project
+cd my-project</pre>
+      </div>
+    </div>
+
+    <div class="step"><div class="num">2</div>
+      <div>
+        <b>Start tracking the folder with Git:</b>
+        <pre>git init</pre>
+        Make sure you have a folder only for the project. Everything that is in the folder will be tracked for changes.
+      </div>
+    </div>
+
+    <div class="step"><div class="num">3</div>
+      <div>
+        <b>Create an empty repository on GitHub.</b> Go to github.com, click <b>New repository</b>, and give it the same name as your folder. Do <b>not</b> tick "Add a README". Copy the URL it shows you.
+      </div>
+    </div>
+
+    <div class="step"><div class="num">4</div>
+      <div>
+        <b>Connect your folder to GitHub</b> (replace the URL with yours):
+        <pre>git remote add origin https://github.com/YOUR-USERNAME/my-project.git</pre>
+        <b>"origin"</b> is the usual nickname for your GitHub copy.
+      </div>
+    </div>
+
+    <div class="step"><div class="num">5</div>
+      <div>
+        <b>Name your main branch <code>main</code>:</b>
+        <pre>git branch -M main</pre>
+        By default depending on the git version the first branch can be named <b>main</b> or <b>master</b>.
+        You can check the name with <pre>git branch</pre>
+      </div>
+    </div>
+
+    <div class="tip">💡 Check the connection with <code>git remote -v</code>. You should see your GitHub URL listed.</div>
+  </section>
+
+  <!-- SECTION 3: Add, commit, push -->
+  <section class="s3">
+    <h2>Section 3: Everyday use commands: Save and send your work (add, commit, push)</h2>
+
+    <div class="two">
+      <div>
+        <div class="label">Option A: Terminal</div>
+        <div class="step"><div class="num">1</div>
+          <div><b>Add</b> files to the save list (<i>stage</i> them):
+          <pre>git add .</pre>
+          (<code>.</code> means "everything that changed". You can also name one file, like <code>git add index.html</code>.)</div>
+        </div>
+        <div class="step"><div class="num">2</div>
+          <div><b>Commit</b> (save a snapshot with a message):
+          <pre>git commit -m "Describe what you changed"</pre></div>
+        </div>
+        <div class="step"><div class="num">3</div>
+            <div><b>Push</b> to GitHub.
+                <p><b>First push only</b> (sets the link between your local branch and GitHub):</p>
+                <pre>git push --set-upstream origin main</pre>
+                <p>The short form <code>git push -u origin main</code> does the same thing.</p>
+                <p><b>Every push after that:</b></p>
+                <pre>git push</pre>
+            </div>
+            </div>
+      </div>
+
+      <div>
+        <div class="label">Option B: VS Code</div>
+        <!-- Simplified drawing of the VS Code Source Control panel -->
+        <svg viewBox="0 0 340 230" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Arial">
+          <rect width="340" height="230" rx="10" fill="#1e1e2e"/>
+          <text x="14" y="22" fill="#cdd6f4" font-size="12" font-weight="bold">SOURCE CONTROL</text>
+          <text x="14" y="44" fill="#a6adc8" font-size="10">CHANGES</text>
+
+          <!-- File row with the + button -->
+          <rect x="10" y="50" width="320" height="26" rx="4" fill="#313244"/>
+          <text x="20" y="67" fill="#f9e2af" font-size="12">index.html</text>
+          <text x="262" y="67" fill="#a6e3a1" font-size="11">M</text>
+          <circle cx="302" cy="63" r="10" fill="#89b4fa"/>
+          <text x="298" y="68" fill="#1e1e2e" font-size="14" font-weight="bold">+</text>
+
+          <!-- Commit message box -->
+          <rect x="10" y="90" width="320" height="40" rx="4" fill="#181825" stroke="#45475a"/>
+          <text x="20" y="114" fill="#6c7086" font-size="11">Message (e.g. "Added my homepage")</text>
+
+          <!-- Commit button -->
+          <rect x="10" y="140" width="320" height="26" rx="4" fill="#89b4fa"/>
+          <text x="150" y="157" fill="#1e1e2e" font-size="12" font-weight="bold">✓ Commit</text>
+
+          <!-- Publish button -->
+          <rect x="10" y="176" width="320" height="26" rx="4" fill="#a6e3a1"/>
+          <text x="112" y="193" fill="#1e1e2e" font-size="12" font-weight="bold">☁ Publish Branch</text>
+
+          <text x="14" y="220" fill="#a6adc8" font-size="10">Stage = git add · Commit = git commit · Publish = git push</text>
+        </svg>
+        <ol>
+          <li><b>Stage:</b> hover over a file and click <b>+</b>. This is <code>git add</code>.</li>
+          <li><b>Commit:</b> type a message and click <b>✓ Commit</b>.</li>
+          <li><b>Push:</b> click <b>Publish Branch</b> the first time. Later, the button says <b>Sync Changes</b>.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Extra commands -->
+  <section class="s4">
+    <h2>Section 4: Extra commands</h2>
+
+    <div class="tip" style="background:#dcfce7;">
+      <b>⬇ git pull</b> is what you use when you need to <b>update your local copy from GitHub</b>. It downloads the latest changes, for example after you edited files on github.com, or after a classmate pushed changes to a shared project.
+      <pre>git pull</pre>
+      In VS Code, the <b>Sync Changes</b> button also pulls before it pushes.
+    </div>
+
+    <table>
+      <tr><th>Command</th><th>What it does</th></tr>
+      <tr><td><code>git status</code></td><td>Shows which files changed and what's staged</td></tr>
+      <tr><td><code>git pull</code></td><td>Downloads the latest changes in the repo from GitHub to your computer</td></tr>
+      <tr><td><code>git log --oneline</code></td><td>Shows the list of saved snapshots (commits)</td></tr>
+      <tr><td><code>git clone URL</code></td><td>Downloads a whole project from GitHub the first time. <br/> Example: git clone <a target="_blank" href="https://github.com/guergana/AugmentingTheGalleryExample">https://github.com/guergana/AugmentingTheGalleryExample</a> <br/> This is where you find the address for the clone command: <br/> <img src="git_clone.png" width="70%"/></td></tr>
+
+    </table>
+  </section>
+
+</body>
+</html>
