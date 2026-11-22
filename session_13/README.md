@@ -1,5 +1,7 @@
 # Example: Where Are the Artworks From?
 
+![alt text](artworks_exercise.jpg "Screenshot")
+
 Students create an artworks table in Supabase. Each row is one artwork, with the place it was made and the museum that holds it.
 
 1. Create the table and sample data. Run this in the Supabase SQL Editor:
