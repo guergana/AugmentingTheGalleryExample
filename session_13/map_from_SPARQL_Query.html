@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Paintings from the Art Institute of Chicago</title>
+
+  <!-- Load Leaflet (the 2D map library) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    /* Make the map fill the whole browser window */
+    html, body, #map { width: 100%; height: 100%; margin: 0; }
+    /* Keep the popup pictures a sensible size */
+    .popup-img { width: 200px; border-radius: 6px; display: block; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+  // STEP 1: Create the map and the base picture (tiles)
+  const map = L.map("map").setView([30, 10], 2);
+  L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  // STEP 2: The SPARQL question, written as text.
+  // It asks Wikidata for paintings in the Art Institute of Chicago, with a
+  // picture, and the place where each one was made, with its coordinates.
+  const query = `
+    SELECT ?painting ?paintingLabel ?image ?placeLabel ?coord WHERE {
+      ?painting wdt:P195 wd:Q239303;   # collection: Art Institute of Chicago
+                wdt:P31 wd:Q3305213;   # instance of: painting
+                wdt:P18 ?image;        # has an image
+                wdt:P1071 ?place.      # place of creation
+      ?place wdt:P625 ?coord.          # coordinates of that place
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    }
+    LIMIT 50`;
+
+  // STEP 3: Send the question to Wikidata's query service
+  async function loadPaintings() {
+    const url = "https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(query);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.log("Wikidata error:", await response.text());
+      return;
+    }
+
+    const data = await response.json();
+
+    console.log('query results data', data);
+
+    // STEP 4: Each result is one row. Add a marker for each row.
+    data.results.bindings.forEach(row => {
+      // The coordinates come back as text, for example "Point(-0.08 51.5)".
+      // Wikidata writes longitude first, so we read the two numbers in that order.
+      const numbers = row.coord.value.match(/-?\d+(\.\d+)?/g);
+      const lon = Number(numbers[0]);
+      const lat = Number(numbers[1]);
+
+      // The image file name is turned into a picture link. The "width" part asks for a smaller copy.
+      const picture = row.image.value + "?width=200";
+      const title = row.paintingLabel.value;
+      const place = row.placeLabel.value;
+
+      // STEP 5: Add the marker. Leaflet wants latitude first, then longitude.
+      L.marker([lat, lon])
+        .addTo(map)
+        .bindPopup(
+          '<img class="popup-img" src="' + picture + '">'
+          + '<b>' + title + '</b><br>'
+          + 'Made in: ' + place
+        );
+    });
+
+    console.log("Markers added:", data.results.bindings.length);
+  }
+
+  loadPaintings();
+</script>
+
+</body>
+</html>

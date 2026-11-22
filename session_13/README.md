@@ -37,3 +37,33 @@ insert into artworks (title, artist, year, place_name, latitude, longitude) valu
 ```
 
 2. For the examples to work you need a Cesium access token and Supabase publishable key.
+
+3. Wikidata SPARQL Query. Go to query.wikidata.org and run this query to show the first random 20 paintings from the Art Institute of Chicago collection.
+
+```
+SELECT ?painting ?paintingLabel ?image WHERE {
+  ?painting wdt:P195 wd:Q239303;   # collection: Art Institute of Chicago
+            wdt:P31 wd:Q3305213;   # instance of: painting
+            wdt:P18 ?image.        # has an image
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+LIMIT 20
+```
+
+4. You can also display maps on the Wikidata Query Service.
+
+```
+#defaultView:Map
+# Paintings held by the Art Institute of Chicago, with a picture and the place they were made
+SELECT ?painting ?paintingLabel ?image ?placeLabel ?coord WHERE {
+  ?painting wdt:P195 wd:Q239303;   # collection: Art Institute of Chicago
+            wdt:P31 wd:Q3305213;   # instance of: painting
+            wdt:P18 ?image;        # has an image
+            wdt:P1071 ?place.      # place of creation
+  ?place wdt:P625 ?coord.          # coordinates of that place
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+LIMIT 50
+```
+
+Tip: change `#defaultView:Map` to `#defaultView>Table` to see where the data that is being retrieved.
