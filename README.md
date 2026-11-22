@@ -14,7 +14,8 @@ Topics: Git, Github & Netlify.
 
 How to build a map visualization of artworks from a particular museum using open APIs. 
 
-Libraries used:
+Tools used:
 - CesiumJS for the map. [Link](https://cesium.com)
 - Wikimedia Commons for loading the artwork images, since we were having trouble with the CORS configuratio of the Museum's API. [Link](https://commons.wikimedia.org/wiki/Commons:Commons_API)
 - The Chicago Art Institute Open Api . [Link](https://api.artic.edu/docs/)
+- Wikidata Query Service. [https://query.wikidata.org](https://query.wikidata.org)
