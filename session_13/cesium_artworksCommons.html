@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Where Do Our Artworks Come From?</title>
+
+  <!-- Load CesiumJS (the 3D globe library) -->
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Cesium.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+  <style>
+    /* Make the globe fill the whole browser window */
+    html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; }
+
+    /* Make the info box taller and wider so the artwork is visible */
+    .cesium-infoBox {
+      width: 420px !important;
+      height: 80vh !important;   /* 80% of the window height */
+      top: 60px !important;      /* keeps it below the toolbar */
+    }
+
+    /* Make the content inside the box fill that height */
+    .cesium-infoBox-iframe {
+      height: 100% !important;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="cesiumContainer"></div>
+
+<script src="config.js"></script>
+<script>
+  // STEP 1: Cesium access token (free account at ion.cesium.com)
+  Cesium.Ion.defaultAccessToken = CESIUM_TOKEN;
+  // STEP 2: Create the globe with satellite imagery and real terrain
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrain: Cesium.Terrain.fromWorldTerrain(),
+    baseLayerPicker: false
+  });
+
+  // Our museum's location (Art Institute of Chicago)
+  const MUSEUM = { name: "Art Institute of Chicago", lat: 41.88, lon: -87.62 };
+
+  // STEP 3: Add the museum as a special marker
+  viewer.entities.add({
+    name: MUSEUM.name,
+    position: Cesium.Cartesian3.fromDegrees(MUSEUM.lon, MUSEUM.lat),
+    point: {
+      pixelSize: 18,
+      color: Cesium.Color.DEEPSKYBLUE,
+      outlineColor: Cesium.Color.WHITE,
+      outlineWidth: 3,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY
+    },
+    label: {
+      text: MUSEUM.name,
+      font: "bold 16px sans-serif",
+      pixelOffset: new Cesium.Cartesian2(0, -24),
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      showBackground: true,
+      heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY
+    }
+  });
+
+  // STEP 4: Your Supabase connection details
+  const SUPABASE_URL = "https://epdyvouclenzbifdnbee.supabase.co/rest/v1/artworks";
+  const SUPABASE_KEY = "sb_publishable_80kBfm9ZEvssPIbbje2n6Q_LxU10p8Z";
+
+  // STEP 5: Ask Supabase for all rows in the "artworks" table
+  async function loadArtworks() {
+    const response = await fetch(SUPABASE_URL + "?select=*", {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: "Bearer " + SUPABASE_KEY
+      }
+    });
+
+    // If Supabase refuses the request, show the reason in the console (F12)
+    if (!response.ok) {
+      console.log("Supabase error:", await response.text());
+      return;
+    }
+
+    const artworks = await response.json();
+
+    // STEP 6: For each artwork, add a marker at its place of origin
+    // and a line from the museum to that place
+    artworks.forEach(art => {
+      const lon = Number(art.longitude);
+      const lat = Number(art.latitude);
+
+      // The text shown in the info box (without the image yet)
+      const infoText = `
+        <p><b>Artist:</b> ${art.artist}<br>
+        <b>Year:</b> ${art.year}<br>
+        <b>Made in:</b> ${art.place_name}</p>`;
+
+      // The marker where the artwork was made
+      const marker = viewer.entities.add({
+        name: art.title,
+        position: Cesium.Cartesian3.fromDegrees(lon, lat),
+        point: {
+          pixelSize: 12,
+          color: Cesium.Color.ORANGE,
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        },
+        label: {
+          text: art.title,
+          font: "14px sans-serif",
+          pixelOffset: new Cesium.Cartesian2(0, -20),
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          showBackground: true,
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        },
+        // Shown when a student clicks the marker
+        description: infoText
+      });
+
+      // Store the search words and the text, so the image code can use them later
+      marker.searchText = art.title + " " + art.artist;
+      marker.infoText = infoText;
+
+      // A line from the museum to the place of origin.
+      // GEODESIC draws the shortest path over the curved Earth.
+      viewer.entities.add({
+        polyline: {
+          positions: Cesium.Cartesian3.fromDegreesArray([
+            MUSEUM.lon, MUSEUM.lat,
+            lon, lat
+          ]),
+          width: 2,
+          arcType: Cesium.ArcType.GEODESIC,
+          material: Cesium.Color.GOLD.withAlpha(0.8)
+        }
+      });
+    });
+
+    // STEP 7: Fly the camera to show the museum and all the artworks
+    viewer.flyTo(viewer.entities);
+  }
+
+  // STEP 8: When a marker is clicked, search Wikimedia Commons for an image
+  async function showArtworkImage(entity) {
+    // Stop if nothing was clicked, there is no search text, or the image is already loaded
+    if (!entity || !entity.searchText || entity.imageLoaded) return;
+    entity.imageLoaded = true;
+
+    // Show a "loading" message while we wait
+    entity.description = entity.infoText + "<p><i>Loading image…</i></p>";
+
+    try {
+      // Ask Wikimedia Commons for one image that matches the title and artist.
+      // origin=* allows the request from a web page.
+      const url = "https://commons.wikimedia.org/w/api.php"
+        + "?action=query&generator=search"
+        + "&gsrsearch=" + encodeURIComponent(entity.searchText)
+        + "&gsrnamespace=6&gsrlimit=1"
+        + "&prop=imageinfo&iiprop=url&iiurlwidth=600"
+        + "&format=json&origin=*";
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      // The result is a list of pages. We asked for only one, so take the first.
+      const pages = data.query ? data.query.pages : null;
+      const page = pages ? Object.values(pages)[0] : null;
+      const info = page && page.imageinfo ? page.imageinfo[0] : null;
+
+      if (info) {
+        // Show the picture, the text, and a link to the image's page for its licence
+        entity.description =
+          '<img src="' + info.thumburl + '" style="width:100%; border-radius:6px">'
+          + entity.infoText
+          + '<p style="font-size:12px"><a href="' + info.descriptionurl
+          + '" target="_blank">Image source and licence (Wikimedia Commons)</a></p>';
+      } else {
+        entity.description = entity.infoText + "<p><i>No image found.</i></p>";
+      }
+    } catch (error) {
+      // If the request fails, show the reason and allow another try on the next click
+      console.log("Could not load image:", error);
+      entity.imageLoaded = false;
+      entity.description = entity.infoText;
+    }
+  }
+
+  // Run the image code whenever a student selects a marker
+  viewer.selectedEntityChanged.addEventListener(showArtworkImage);
+
+  loadArtworks();
+</script>
+
+</body>
+</html>
